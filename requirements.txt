@@ -1,0 +1,4 @@
+aiogram~=2.12
+environs~=8.0.0
+lxml~=4.6.3
+requests>=2.26.0
