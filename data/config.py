@@ -1,5 +1,3 @@
-import datetime as dt
-
 from environs import Env
 
 # Теперь используем вместо библиотеки python-dotenv библиотеку environs
@@ -11,5 +9,3 @@ ADMINS = env.list("ADMINS")  # Тут у нас будет список из а�
 IP = env.str("ip")  # Тоже str, но для айпи адреса хоста
 EDU_LOGIN = env.str("EDU_LOGIN")
 EDU_PASSWORD = env.str("EDU_PASSWORD")
-NOW = dt.datetime.now()
-YESTERDAY = NOW - dt.timedelta(days=4)
