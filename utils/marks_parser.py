@@ -1,4 +1,3 @@
-import requests
 import datetime as dt
 import lxml.html
 from data.config import EDU_LOGIN, EDU_PASSWORD
@@ -21,24 +20,24 @@ def convert_to_utc(date: dt.date):
     return "Воскресенье" if not (1630789200 - int(date_utc)) % 604800 else int(date_utc)
 
 
-def get_dairy_html(date: dt.date):
+def get_dairy_html(date: dt.date, session):
     """
     :param date:
+    :param session:
     :return: None or html with diary
     получаем исходник с дневником, а парамы можно получить из даты
     """
-    s = requests.Session()
+
     url = 'https://edu.tatar.ru/logon'
     data = {
         'main_login': EDU_LOGIN,
         'main_password': EDU_PASSWORD
     }
-    s.post(url=url, data=data, headers=dict(Referer=url))
+    session.post(url=url, data=data, headers=dict(Referer=url))
     utc_date = convert_to_utc(date)
     if not utc_date or utc_date == 'Воскресенье':
         return utc_date
-    r = s.get(url='https://edu.tatar.ru/user/diary/week',
-              params={'date': utc_date})
+    r = session.get(url='https://edu.tatar.ru/user/diary/week', params={'date': utc_date})
     return r.text
 
 
@@ -50,13 +49,25 @@ def get_dict(func):
         result = dict(day=answer.pop(0))
         last_data = None
         for elem in answer:
-            if not all((x.isdigit() for x in elem.split('/'))):
+            if not all((x.isdigit() or x == 'н' for x in elem.split('/'))):
                 result[elem] = None
                 last_data = elem
             else:
                 result[last_data] = elem
         return result
     return wrapper
+
+
+def get_label(dairy_data, day, day_start):
+    result = None
+    try:
+        result = dairy_data.index(str(int(day) + 1), day_start)
+    except ValueError:
+        try:
+            result = dairy_data.index('1', day_start)
+        except ValueError:
+            pass
+    return result
 
 
 @get_dict
@@ -68,28 +79,31 @@ def day_prepare_statistic(data, day: str):
     TODO: Сделать словарик со статистикой дня
     """
     markup = lxml.html.document_fromstring(data)
-    xpath = '//td[@class="tt-days"]/div/span | //td[@class="tt-subj"]/div/span \
-         | //td[@class="tt-mark"]/div/span \
+    xpath = '//td[@class="tt-days"]/div/span | //td[@class="tt-subj"]/div \
+         | //td[@class="tt-mark"]/div \
          | //tr[@class="tt-separator"]/*'
     matches = markup.xpath(xpath)
-    dairy_data = [x.text for x in matches]
+    dairy_data = [x.text for x in matches if x.text is not None]
+    # print(dairy_data)
     try:
         day_start = dairy_data.index(day)
     except ValueError:
         logging.exception('Нет запрашиваемого дня в данных')
         return None
-    day_end = dairy_data.index(None, day_start)
-    day_data = dairy_data[day_start:day_end]
+    label = get_label(dairy_data, day, day_start)
+    # print(label)
+    day_data = dairy_data[day_start:label]
     return day_data
 
 
-def get_marks(day: dt.date):
-    with open('utils/dairy.html', 'r', encoding='utf-8') as f:
-        dairy = f.read()
+def get_marks(day: dt.date, session):
+    # with open('utils/dairy.html', 'r', encoding='utf-8') as f:
+    #     dairy = f.read()
     if day.weekday() == 6:
         return 'Воскресенье'
-    # dairy = get_dairy_html(day)
+    dairy = get_dairy_html(day, session)
     prepared_stat = day_prepare_statistic(dairy, str(day.day)) if dairy else None
+    # print(prepared_stat)
     return prepared_stat
 
 
