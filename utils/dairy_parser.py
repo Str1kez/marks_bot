@@ -76,7 +76,6 @@ def day_prepare_statistic(data, day: str):
     :param data: string with html
     :param day: number of required day
     :return: list with day on first position and subj, mark in queue
-    TODO: Сделать словарик со статистикой дня
     """
     markup = lxml.html.document_fromstring(data)
     xpath = '//td[@class="tt-days"]/div/span | //td[@class="tt-subj"]/div \
@@ -84,30 +83,25 @@ def day_prepare_statistic(data, day: str):
          | //tr[@class="tt-separator"]/*'
     matches = markup.xpath(xpath)
     dairy_data = [x.text for x in matches if x.text is not None]
-    # print(dairy_data)
     try:
         day_start = dairy_data.index(day)
     except ValueError:
         logging.exception('Нет запрашиваемого дня в данных')
         return None
     label = get_label(dairy_data, day, day_start)
-    # print(label)
     day_data = dairy_data[day_start:label]
     return day_data
 
 
 def get_marks(day: dt.date, session):
-    # with open('utils/dairy.html', 'r', encoding='utf-8') as f:
-    #     dairy = f.read()
     if day.weekday() == 6:
         return 'Воскресенье'
     dairy = get_dairy_html(day, session)
     prepared_stat = day_prepare_statistic(dairy, str(day.day)) if dairy else None
-    # print(prepared_stat)
     return prepared_stat
 
 
-def pretty_output(data):
+def pretty_diary(data):
     if not data or data == 'Воскресенье':
         return data
     result = ""
