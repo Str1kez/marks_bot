@@ -12,7 +12,7 @@ from utils import get_marks, pretty_output
 from utils.misc import rate_limit
 
 
-@rate_limit(10)
+@rate_limit(2)
 @dp.message_handler(Command('marks'))
 async def bot_echo(message: types.Message):
     await message.answer('Выберите день:\n', reply_markup=marks)
