@@ -3,14 +3,21 @@ from aiogram import types
 from aiogram.dispatcher.filters import Command
 from aiogram.types import CallbackQuery
 
+from filters import IsGroup
 from keyboards.inline import marks, callback_marks
 from loader import dp, session
 from utils import get_marks, pretty_diary, get_table
-
-# Эхо хендлер, куда летят команды с оценками
 from utils.misc import rate_limit
 
 
+# Эхо хендлер, куда летят команды с оценками в группе
+@rate_limit(10)
+@dp.message_handler(IsGroup(), Command('marks'))
+async def bot_echo(message: types.Message):
+    await message.answer('Выберите:\n', reply_markup=marks)
+
+
+# Эхо хендлер, куда летят команды с оценками в личке
 @rate_limit(2)
 @dp.message_handler(Command('marks'))
 async def bot_echo(message: types.Message):
