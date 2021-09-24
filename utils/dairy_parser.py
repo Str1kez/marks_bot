@@ -33,11 +33,17 @@ def get_dairy_html(date: dt.date, session):
         'main_login': EDU_LOGIN,
         'main_password': EDU_PASSWORD
     }
-    session.post(url=url, data=data, headers=dict(Referer=url))
+    headers = {
+        'Referer': url,
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/93.0.4577.82 Safari/537.36'
+    }
+    session.post(url=url, data=data, headers=headers)
     utc_date = convert_to_utc(date)
     if not utc_date or utc_date == 'Воскресенье':
         return utc_date
     r = session.get(url='https://edu.tatar.ru/user/diary/week', params={'date': utc_date})
+    print(r.content)
     return r.text
 
 
