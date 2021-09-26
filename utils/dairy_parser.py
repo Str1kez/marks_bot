@@ -43,7 +43,6 @@ def get_dairy_html(date: dt.date, session):
     if not utc_date or utc_date == 'Воскресенье':
         return utc_date
     r = session.get(url='https://edu.tatar.ru/user/diary/week', params={'date': utc_date})
-    print(r.content)
     return r.text
 
 
