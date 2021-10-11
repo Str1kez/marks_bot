@@ -16,6 +16,11 @@ def get_table_html(session):
         'main_login': EDU_LOGIN,
         'main_password': EDU_PASSWORD
     }
+    proxy = {
+    'https': 'http://squid2.kpfu.ru:8080',
+    'http': 'http://squid2.kpfu.ru:8080',
+    }
+    session.proxy = proxy
     try:
         session.post(url=url, data=data, headers=dict(Referer=url))
         r = session.get(url='https://edu.tatar.ru/user/diary/term?term=1')
