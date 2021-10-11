@@ -16,14 +16,8 @@ def get_table_html(session):
         'main_login': EDU_LOGIN,
         'main_password': EDU_PASSWORD
     }
-    proxy = {
-    'https': 'http://squid2.kpfu.ru:8080',
-    'http': 'http://squid2.kpfu.ru:8080',
-    }
-    session.proxies = proxy
     try:
         session.post(url=url, data=data, headers=dict(Referer=url))
-        print(session.get(url='https://httpbin.org/ip').text)
         r = session.get(url='https://edu.tatar.ru/user/diary/term?term=1')
     except Exception:
         logging.exception('Не смог спарсить таблицу')
