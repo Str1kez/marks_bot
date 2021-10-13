@@ -13,8 +13,7 @@ def convert_to_utc(date: dt.date):
     """
     try:
         date_utc = dt.datetime(date.year, date.month, date.day)
-        date_utc = dt.datetime.timestamp(date_utc)
-        print(date_utc)
+        date_utc = dt.datetime.timestamp(date_utc) - 10800
     except ValueError:
         logging.exception('Такого дня не существует в этом месяце')
         return None
@@ -44,7 +43,7 @@ def get_dairy_html(date: dt.date, session):
     if not utc_date or utc_date == 'Воскресенье':
         return utc_date
     r = session.get(url='https://edu.tatar.ru/user/diary/week',
-                    params={'date': 1634072400})
+                    params={'date': utc_date})
     return r.text
 
 
