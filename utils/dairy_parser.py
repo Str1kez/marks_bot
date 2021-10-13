@@ -14,6 +14,7 @@ def convert_to_utc(date: dt.date):
     try:
         date_utc = dt.datetime(date.year, date.month, date.day)
         date_utc = dt.datetime.timestamp(date_utc)
+        print(dt.datetime.fromtimestamp(date_utc))
     except ValueError:
         logging.exception('Такого дня не существует в этом месяце')
         return None
@@ -42,7 +43,8 @@ def get_dairy_html(date: dt.date, session):
     utc_date = convert_to_utc(date)
     if not utc_date or utc_date == 'Воскресенье':
         return utc_date
-    r = session.get(url='https://edu.tatar.ru/user/diary/week', params={'date': utc_date})
+    r = session.get(url='https://edu.tatar.ru/user/diary/week',
+                    params={'date': utc_date})
     return r.text
 
 
@@ -88,6 +90,7 @@ def day_prepare_statistic(data, day: str):
          | //tr[@class="tt-separator"]/*'
     matches = markup.xpath(xpath)
     dairy_data = [x.text for x in matches if x.text is not None]
+    print(dairy_data)
     try:
         day_start = dairy_data.index(day)
     except ValueError:
@@ -102,7 +105,8 @@ def get_marks(day: dt.date, session):
     if day.weekday() == 6:
         return 'Воскресенье'
     dairy = get_dairy_html(day, session)
-    prepared_stat = day_prepare_statistic(dairy, str(day.day)) if dairy else None
+    prepared_stat = day_prepare_statistic(
+        dairy, str(day.day)) if dairy else None
     return prepared_stat
 
 
