@@ -1,4 +1,8 @@
+import asyncio
 import datetime as dt
+import functools
+from concurrent import futures
+
 import lxml.html
 from data.config import EDU_LOGIN, EDU_PASSWORD
 import logging
@@ -38,13 +42,16 @@ def get_dairy_html(date: dt.date, session):
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/93.0.4577.82 Safari/537.36'
     }
-    session.post(url=url, data=data, headers=headers)
-    utc_date = convert_to_utc(date)
-    if not utc_date or utc_date == 'Воскресенье':
-        return utc_date
-    r = session.get(url='https://edu.tatar.ru/user/diary/week',
-                    params={'date': utc_date})
-    return r.text
+    try:
+        session.post(url=url, data=data, headers=headers)
+        utc_date = convert_to_utc(date)
+        if not utc_date or utc_date == 'Воскресенье':
+            return utc_date
+        r = session.get(url='https://edu.tatar.ru/user/diary/week',
+                        params={'date': utc_date})
+        return r.text
+    except Exception:
+        logging.exception('Не смог спарсить дневник')
 
 
 def get_dict(func):
@@ -56,10 +63,13 @@ def get_dict(func):
         last_data = None
         for elem in answer:
             if not all((x.isdigit() or x == 'н' for x in elem.split('/'))):
-                result[elem] = None
+                result.setdefault(elem)
                 last_data = elem
             else:
-                result[last_data] = elem
+                if result.get(last_data):
+                    result[last_data] += ' ' + elem
+                else:
+                    result[last_data] = elem
         return result
     return wrapper
 
@@ -89,7 +99,6 @@ def day_prepare_statistic(data, day: str):
          | //tr[@class="tt-separator"]/*'
     matches = markup.xpath(xpath)
     dairy_data = [x.text for x in matches if x.text is not None]
-    print(dairy_data)
     try:
         day_start = dairy_data.index(day)
     except ValueError:
@@ -100,10 +109,18 @@ def day_prepare_statistic(data, day: str):
     return day_data
 
 
-def get_marks(day: dt.date, session):
+async def get_marks(day: dt.date, session):
+    """
+    :param day:
+    :param session:
+    :return:
+    Делаем request асинхронным, так как через aiohttp не работает прокси для сайта
+    """
     if day.weekday() == 6:
         return 'Воскресенье'
-    dairy = get_dairy_html(day, session)
+    loop = asyncio.get_running_loop()
+    with futures.ThreadPoolExecutor() as pool:
+        dairy = await loop.run_in_executor(pool, functools.partial(get_dairy_html, day, session))
     prepared_stat = day_prepare_statistic(
         dairy, str(day.day)) if dairy else None
     return prepared_stat

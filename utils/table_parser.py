@@ -1,7 +1,13 @@
-import logging
+import asyncio
+import functools
+from concurrent import futures
 
+import logging
 from data.config import EDU_LOGIN, EDU_PASSWORD
 import lxml.html
+
+
+SAVE_DIARY = None
 
 
 def get_table_html(session):
@@ -75,8 +81,37 @@ def pretty_table(table: dict):
     return result
 
 
-def get_table(session):
-    dairy = get_table_html(session)
+async def get_table(session):
+    """
+    :param session:
+    :return:
+    Делаем request асинхронным, так как через aiohttp не работает прокси для сайта
+    """
+    loop = asyncio.get_running_loop()
+    with futures.ThreadPoolExecutor() as pool:
+        dairy = await loop.run_in_executor(pool, functools.partial(get_table_html, session))
     if dairy:
         return pretty_table(table_prepare_statistic(dairy))
     return 'Ошибочка вышла :('
+
+
+async def get_subjects(session):
+    loop = asyncio.get_running_loop()
+    with futures.ThreadPoolExecutor() as pool:
+        dairy = await loop.run_in_executor(pool, functools.partial(get_table_html, session))
+    if dairy:
+        global SAVE_DIARY
+        SAVE_DIARY = table_prepare_statistic(dairy)
+        return list(SAVE_DIARY)
+    logging.exception('Была ошибка с табелем')
+
+
+def get_subject(subj: str):
+    if subj not in SAVE_DIARY:
+        logging.exception('Ошибка в поиске предмета для представления в подробном виде')
+        return
+    SAVE_DIARY[subj][-1] = f'<b>{SAVE_DIARY[subj][-1]}</b>'
+    for x in range(len(SAVE_DIARY[subj])):
+        if SAVE_DIARY[subj][x] == '2':
+            SAVE_DIARY[subj][x] = '2️⃣'
+    return f'<u>{subj}</u>' + ':    ' + '  '.join(SAVE_DIARY[subj]) + '\n'

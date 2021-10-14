@@ -12,3 +12,10 @@ marks = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         InlineKeyboardButton('Табель', callback_data='get:quarter:table')
     ]
 ])
+
+more_marks = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+    [
+        InlineKeyboardButton('Больше', callback_data='get:quarter:more'),
+        InlineKeyboardButton('Закрыть', callback_data='get:quarter:close')
+    ]
+])
