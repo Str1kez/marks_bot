@@ -65,7 +65,11 @@ def pretty_table(table: dict):
     for elem in table:
         if table[elem]:
             table[elem][-1] = f'<b>{table[elem][-1]}</b>'
-            result += f'<u>{elem}</u>' + ':    ' + '  '.join(table[elem][-4:]) + '\n'
+            for x in range(len(table[elem])):
+                if table[elem][x] == '2':
+                    table[elem][x] = '2️⃣'
+            result += f'<u>{elem}</u>' + ':    ' + \
+                '  '.join(table[elem][-4:]) + '\n'
         else:
             result += f'<u>{elem}</u>' + ':\n'
     return result
