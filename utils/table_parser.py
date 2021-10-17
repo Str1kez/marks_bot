@@ -48,6 +48,8 @@ def get_dict(func):
                 result[last_subj] = [elem]
             else:
                 result[last_subj].append(elem)
+        global SAVE_DIARY
+        SAVE_DIARY = result
         return result
     return wrapper
 
@@ -95,20 +97,14 @@ async def get_table(session):
     return 'Ошибочка вышла :('
 
 
-async def get_subjects(session):
-    loop = asyncio.get_running_loop()
-    with futures.ThreadPoolExecutor() as pool:
-        dairy = await loop.run_in_executor(pool, functools.partial(get_table_html, session))
-    if dairy:
-        global SAVE_DIARY
-        SAVE_DIARY = table_prepare_statistic(dairy)
-        return list(SAVE_DIARY)
-    logging.exception('Была ошибка с табелем')
+def get_subjects():
+    return list(SAVE_DIARY)
 
 
 def get_subject(subj: str):
     if subj not in SAVE_DIARY:
-        logging.exception('Ошибка в поиске предмета для представления в подробном виде')
+        logging.exception(
+            'Ошибка в поиске предмета для представления в подробном виде')
         return
     SAVE_DIARY[subj][-1] = f'<b>{SAVE_DIARY[subj][-1]}</b>'
     for x in range(len(SAVE_DIARY[subj])):

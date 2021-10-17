@@ -70,7 +70,7 @@ async def close_keyboard(call: CallbackQuery):
 
 @dp.callback_query_handler(callback_marks.filter(type='more'))
 async def get_more_marks(call: CallbackQuery):
-    subjects = await get_subjects(session)
+    subjects = get_subjects()
     await call.answer()
     await call.message.edit_reply_markup()
     await call.message.answer('Выберите:\n', reply_markup=create_subject_keyboard(subjects))
