@@ -2,10 +2,10 @@ import asyncio
 import datetime as dt
 import functools
 from concurrent import futures
-
 import lxml.html
+
 from data.config import EDU_LOGIN, EDU_PASSWORD
-import logging
+from utils.misc.logging import exc_log
 
 
 def convert_to_utc(date: dt.date):
@@ -19,12 +19,12 @@ def convert_to_utc(date: dt.date):
         date_utc = dt.datetime(date.year, date.month, date.day)
         date_utc = dt.datetime.timestamp(date_utc) - 10800
     except ValueError:
-        logging.exception('Такого дня не существует в этом месяце')
+        exc_log.error('Такого дня не существует в этом месяце')
         return None
     return "Воскресенье" if not (1630789200 - int(date_utc)) % 604800 else int(date_utc)
 
 
-def get_dairy_html(date: dt.date, session):
+def get_diary_html(date: dt.date, session):
     """
     :param date:
     :param session:
@@ -34,13 +34,12 @@ def get_dairy_html(date: dt.date, session):
 
     url = 'https://edu.tatar.ru/logon'
     data = {
-        'main_login': EDU_LOGIN,
-        'main_password': EDU_PASSWORD
+        'main_login2': EDU_LOGIN,
+        'main_password2': EDU_PASSWORD
     }
     headers = {
         'Referer': url,
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/93.0.4577.82 Safari/537.36'
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     try:
         session.post(url=url, data=data, headers=headers)
@@ -51,7 +50,7 @@ def get_dairy_html(date: dt.date, session):
                         params={'date': utc_date})
         return r.text
     except Exception:
-        logging.exception('Не смог спарсить дневник')
+        exc_log.error('Не смог спарсить дневник')
 
 
 def get_dict(func):
@@ -74,15 +73,15 @@ def get_dict(func):
     return wrapper
 
 
-def get_label(dairy_data, day, day_start):
+def get_label(diary_data, day, day_start):
     result = None
     try:
-        result = dairy_data.index(str(int(day) + 1), day_start)
+        result = diary_data.index(str(int(day) + 1), day_start)
     except ValueError:
         try:
-            result = dairy_data.index('1', day_start)
+            result = diary_data.index('1', day_start)
         except ValueError:
-            pass
+            exc_log.error("Что-то не так с датой")
     return result
 
 
@@ -98,14 +97,14 @@ def day_prepare_statistic(data, day: str):
          | //td[@class="tt-mark"]/div \
          | //tr[@class="tt-separator"]/*'
     matches = markup.xpath(xpath)
-    dairy_data = [x.text for x in matches if x.text is not None]
+    diary_data = [x.text for x in matches if x.text is not None]
     try:
-        day_start = dairy_data.index(day)
+        day_start = diary_data.index(day)
     except ValueError:
-        logging.exception('Нет запрашиваемого дня в данных')
+        exc_log.error('Нет запрашиваемого дня в данных')
         return None
-    label = get_label(dairy_data, day, day_start)
-    day_data = dairy_data[day_start:label]
+    label = get_label(diary_data, day, day_start)
+    day_data = diary_data[day_start:label]
     return day_data
 
 
@@ -120,10 +119,21 @@ async def get_marks(day: dt.date, session):
         return 'Воскресенье'
     loop = asyncio.get_running_loop()
     with futures.ThreadPoolExecutor() as pool:
-        dairy = await loop.run_in_executor(pool, functools.partial(get_dairy_html, day, session))
+        diary = await loop.run_in_executor(pool, functools.partial(get_diary_html, day, session))
     prepared_stat = day_prepare_statistic(
-        dairy, str(day.day)) if dairy else None
+        diary, str(day.day)) if diary else None
     return prepared_stat
+
+
+def prettify(s: str) -> str:
+    res = ""
+    marks = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
+    for m in s:
+        if m.isdigit():
+            res += marks[int(m) - 1]
+        else:
+            res += m
+    return res
 
 
 def pretty_diary(data):
@@ -134,7 +144,8 @@ def pretty_diary(data):
         if subj == 'day':
             continue
         if data[subj]:
-            result += f'<u>{subj}</u>' + ': ' + data[subj] + '\n'
+            data[subj] = prettify(data[subj])
+            result += f'<u>{subj}</u>' + '\t\t\t\t' + data[subj] + '\n'
         else:
-            result += f'<u>{subj}</u>' + ':\n'
+            result += f'<u>{subj}</u>\n'
     return result
