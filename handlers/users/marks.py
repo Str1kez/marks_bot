@@ -19,7 +19,7 @@ from utils.misc import rate_limit
 @rate_limit(10)
 @dp.message_handler(IsGroup(), Command('marks'))
 async def bot_echo(message: types.Message):
-    await message.answer('Выберите:\n', reply_markup=marks)
+    await message.answer('Выберите:\n', reply_markup=marks, disable_notification=True)
 
 
 # Эхо хендлер, куда летят команды с оценками в личке
@@ -73,7 +73,7 @@ async def get_more_marks(call: CallbackQuery):
     subjects = get_subjects()
     await call.answer()
     await call.message.edit_reply_markup()
-    await call.message.answer('Выберите:\n', reply_markup=create_subject_keyboard(subjects))
+    await call.message.answer('Выберите:\n', reply_markup=create_subject_keyboard(subjects), disable_notification=True)
 
 
 @dp.callback_query_handler(callback_subject.filter(subj='close'))
