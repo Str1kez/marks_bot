@@ -23,7 +23,7 @@ def get_table_html(session):
     headers = {"Referer": url, "Content-Type": "application/x-www-form-urlencoded"}
     try:
         session.post(url=url, data=data, headers=headers)
-        r = session.get(url="https://edu.tatar.ru/user/diary/term?term=1")
+        r = session.get(url="https://edu.tatar.ru/user/diary/term?term=2")
     except Exception:
         exc_log.error("Не смог спарсить таблицу")
         return None
