@@ -17,6 +17,7 @@ pytz = "^2022.6"
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
 isort = "^5.10.1"
+pre-commit = "^3.2.2"
 
 [build-system]
 requires = ["poetry-core"]
